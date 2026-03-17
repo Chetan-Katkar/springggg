@@ -4,6 +4,8 @@ import net.engineeringdigest.journalApp.entity.journalEntry;
 import net.engineeringdigest.journalApp.service.journalEntryService;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -24,24 +26,35 @@ public class journalEntryControllerV2 {
     }
 
     @PostMapping
-    public journalEntry createEntry(@RequestBody journalEntry entry) {
-        entry.setDateTime(LocalDateTime.now());
-        jes.saveEntry(entry);
-        return entry;
+    public ResponseEntity<journalEntry> createEntry(@RequestBody journalEntry entry) {
+        try {
+            entry.setDateTime(LocalDateTime.now());
+            jes.saveEntry(entry);
+            return new ResponseEntity<>(entry, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 
     @GetMapping("/id/{id}")
-    public Optional<journalEntry> getEntryById(@PathVariable ObjectId id) {
-        return jes.findById(id);
+    public ResponseEntity<journalEntry> getEntryById(@PathVariable ObjectId id) {
+        Optional<journalEntry> jee = jes.findById(id);
+        if (jee.isPresent()) {
+            return new ResponseEntity<>(jee.get(), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     @DeleteMapping
     public boolean deleteAll() {
         return jes.deleteAll();
     }
+
     @DeleteMapping("/id/{id}")
-    public void deleteEntryById(@PathVariable ObjectId id) {
+    public ResponseEntity<journalEntry> deleteEntryById(@PathVariable ObjectId id) {
         jes.deletebyId(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @PutMapping("id/{id}")
